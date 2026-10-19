@@ -1,562 +1,557 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 3 - 自定義迷因產生器</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Cyber-Exhibition | 朋友對我的動態留言牆</title>
 
-    <!-- 引入 Google Fonts (Montserrat & Noto Sans TC) 提升質感 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+  <!-- 載入 Google 字體 (Orbitron 科技感數字標題 + Noto Sans TC) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
 
-    <!-- 引入 html2canvas 庫，用來將 HTML 元素轉換成圖片並下載 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ==========================================================================
+       1. 【顏色與風格變數設定】(資深工程師提示：您可以在這裡輕鬆更換主題配色)
+       ========================================================================== */
+    :root {
+      /* 【主題顏色】賽博霓虹配色 */
+      --neon-cyan: #00f3ff;          /* 主色：極光青藍 (高亮邊框與發光核心) */
+      --neon-magenta: #ff007f;       /* 副色：霓虹粉紅 (裝飾線條與亮點) */
+      --neon-yellow: #ffe600;        /* 點綴色：賽博金黃 */
+      
+      /* 【背景與卡片底色】深色玻璃擬態 (Glassmorphism) */
+      --bg-dark: #080a10;            /* 全局深色夜空背景 */
+      --card-bg: rgba(18, 24, 38, 0.65); /* 留言卡片背景 (半透明) */
+      --card-border: rgba(0, 243, 255, 0.18); /* 卡片預設邊框 */
+      
+      /* 【文字顏色】 */
+      --text-main: #f0f6fc;          /* 主要文字 (高對比冷白) */
+      --text-muted: #8b9bb4;         /* 次要文字 (灰藍) */
 
-    <style>
-        /* ==========================================
-           1. 基礎重置與背景樣式 (Global Styles)
-           ========================================== */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Montserrat', 'Noto Sans TC', sans-serif;
-        }
+      /* 【輪播高亮效果控制區】可在這裡微調高亮時的光彩與縮放感 */
+      --highlight-glow: rgba(0, 243, 255, 0.65); /* 發光陰影顏色 */
+      --dimmed-opacity: 0.32;       /* 未選中卡片的透明度 (0.1 ~ 1.0) */
+      --dimmed-blur: 2.5px;          /* 未選中卡片的模糊程度 (px) */
 
-        body {
-            background-color: #0d0f17;
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px 20px;
-        }
+      /* 【佈局與圓角】 */
+      --card-radius: 16px;
+      --font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-code: 'Orbitron', monospace;
+    }
 
-        .header-title {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+    /* 全局重置與網頁背景設定 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        .header-title h1 {
-            font-size: 2.2rem;
-            font-weight: 900;
-            letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #a855f7, #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
-        }
+    body {
+      background-color: var(--bg-dark);
+      /* 動態科技感動態幾何背景微光 */
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(0, 243, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 85%, rgba(255, 0, 127, 0.07) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+      color: var(--text-main);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      padding: 2.5rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
 
-        .header-title p {
-            color: #94a3b8;
-            font-size: 0.95rem;
-        }
+    /* 頁頭 Header 區塊 */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
 
-        /* ==========================================
-           2. 主容器與雙欄響應式佈局 (Layout)
-           ========================================== */
-        .app-container {
-            width: 100%;
-            max-width: 1050px;
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 桌面端：左右等寬雙欄 */
-            gap: 25px;
-            align-items: start;
-        }
+    .badge-tag {
+      display: inline-block;
+      font-family: var(--font-code);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+      border: 1px solid rgba(0, 243, 255, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+    }
 
-        /* 玻璃擬物卡片通用樣式 */
-        .glass-card {
-            background: rgba(30, 41, 59, 0.65);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-        }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      background: linear-gradient(135deg, #ffffff 30%, var(--neon-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.6rem;
+    }
 
-        /* ==========================================
-           3. 左側控制面板 (Control Panel)
-           ========================================== */
-        .controls-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+    }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+    /* 主內容容器 */
+    .app-container {
+      width: 100%;
+      max-width: 1140px;
+    }
 
-        .control-group label {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* 展覽動態控制儀表板 (顯示目前播放索引與總數) */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 30px;
+      padding: 0.6rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      backdrop-filter: blur(10px);
+    }
 
-        .control-group label span.val-badge {
-            font-size: 0.8rem;
-            color: #a855f7;
-            background: rgba(168, 85, 247, 0.15);
-            padding: 2px 8px;
-            border-radius: 8px;
-        }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        /* 自訂檔案上傳按鈕樣式 */
-        .file-upload-wrapper {
-            position: relative;
-            width: 100%;
-        }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
+      animation: pulseDot 1.5s infinite alternate;
+    }
 
-        .file-upload-btn {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px;
-            background: rgba(99, 102, 241, 0.15);
-            border: 2px dashed #6366f1;
-            border-radius: 12px;
-            color: #c7d2fe;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
+    @keyframes pulseDot {
+      0% { opacity: 0.4; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
 
-        .file-upload-btn:hover {
-            background: rgba(99, 102, 241, 0.3);
-            border-color: #a855f7;
-            color: #ffffff;
-        }
+    /* ==========================================================================
+       2. 【酷炫載入動畫 (Loading Animation)】
+       ========================================================================== */
+    #loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem 0;
+      width: 100%;
+    }
 
-        input[type="file"] {
-            display: none; /* 隱藏原生檔案選擇按鈕 */
-        }
+    /* 賽博雙層旋轉環 */
+    .cyber-spinner {
+      position: relative;
+      width: 65px;
+      height: 65px;
+    }
 
-        /* 文字輸入框樣式 */
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            color: #ffffff;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
+    .cyber-spinner::before,
+    .cyber-spinner::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+    }
 
-        input[type="text"]:focus {
-            border-color: #a855f7;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
-        }
+    .cyber-spinner::before {
+      inset: 0;
+      border: 3px solid transparent;
+      border-top-color: var(--neon-cyan);
+      border-right-color: var(--neon-cyan);
+      animation: spinClockwise 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+      filter: drop-shadow(0 0 8px var(--neon-cyan));
+    }
 
-        /* 滑桿 (Range) 樣式 customization */
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            background: #1e293b;
-            border-radius: 5px;
-            outline: none;
-        }
+    .cyber-spinner::after {
+      inset: 8px;
+      border: 3px solid transparent;
+      border-bottom-color: var(--neon-magenta);
+      border-left-color: var(--neon-magenta);
+      animation: spinCounter 0.9s linear infinite;
+      filter: drop-shadow(0 0 8px var(--neon-magenta));
+    }
 
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #a855f7;
-            cursor: pointer;
-            box-shadow: 0 0 8px #a855f7;
-            transition: transform 0.2s;
-        }
+    @keyframes spinClockwise {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
+    @keyframes spinCounter {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
 
-        /* 顏色選擇器與橫向控制排版 */
-        .inline-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
+    /* 酷炫載入文字 */
+    .loading-text {
+      margin-top: 1.8rem;
+      font-family: var(--font-code);
+      font-size: 1.05rem;
+      letter-spacing: 3px;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+      animation: textFlicker 1.8s infinite alternate;
+    }
 
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 100%;
-            height: 40px;
-            border-radius: 8px;
-            cursor: pointer;
-            background: transparent;
-        }
+    @keyframes textFlicker {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
 
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
+    /* ==========================================================================
+       3. 【瀑布流排版 (Masonry Layout)】採用 CSS column-count 實現錯落排列
+       ========================================================================== */
+    .masonry-wall {
+      column-count: 3;        /* 桌機預設：3 欄高低錯落排列 */
+      column-gap: 1.5rem;     /* 欄位間距 */
+      display: none;          /* 資料讀取完成後再開啟顯示 */
+      width: 100%;
+    }
 
-        input[type="color"]::-webkit-color-swatch {
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-        }
+    /* 響應式斷點 (Responsive Columns) */
+    @media (max-width: 960px) {
+      .masonry-wall { column-count: 2; } /* 平板：2 欄 */
+    }
 
-        /* 超酷炫下載按鈕 */
-        .download-btn {
-            margin-top: 10px;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            color: #ffffff;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
+    @media (max-width: 600px) {
+      .masonry-wall { column-count: 1; } /* 手機：1 欄 */
+      header h1 { font-size: 1.7rem; }
+    }
 
-        .download-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.7);
-        }
+    /* ==========================================================================
+       4. 【留言卡片樣式 & 隨時間輪播特效 (Highlight & Dimmed)】
+       ========================================================================== */
+    .card {
+      break-inside: avoid;    /* 防切割：確保卡片不會被瀑布流欄位截斷 */
+      margin-bottom: 1.5rem;  /* 卡片下方留白 */
+      background: var(--card-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--card-radius);
+      padding: 1.4rem;
+      position: relative;
+      overflow: hidden;
 
-        .download-btn:active {
-            transform: translateY(-1px);
-        }
+      /* 【重點動畫 Transition】卡片狀態切換時的平滑轉場 */
+      transition: 
+        transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.6s ease,
+        filter 0.6s ease,
+        border-color 0.6s ease,
+        box-shadow 0.6s ease;
+      transform-origin: center center;
+    }
 
-        /* ==========================================
-           4. 右側預覽區塊 (Preview Area)
-           ========================================== */
-        .preview-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+    /* 卡片角落裝飾線 */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 35px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--neon-cyan), transparent);
+    }
 
-        /* 迷因繪製與包覆容器 */
-        .meme-canvas-box {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            background-color: #05070a;
-            border-radius: 16px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 2px solid rgba(99, 102, 241, 0.4);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-        }
+    /* -----------------------------------------------------------------
+       【狀態 1：未選中卡片 (Dimmed State)】
+       自動變暗、變模糊、稍微縮小，凸顯焦點
+       ----------------------------------------------------------------- */
+    .card.is-dimmed {
+      opacity: var(--dimmed-opacity);
+      filter: blur(var(--dimmed-blur)) grayscale(20%);
+      transform: scale(0.96);
+    }
 
-        .meme-canvas-box img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: contain;
-        }
+    /* -----------------------------------------------------------------
+       【狀態 2：高亮焦點卡片 (Highlight State - 輪播主角)】
+       放大、顯眼發光邊框、清晰顯示、頂層顯示
+       ----------------------------------------------------------------- */
+    .card.is-highlight {
+      opacity: 1;
+      filter: blur(0px) grayscale(0%);
+      transform: scale(1.05) translateY(-4px); /* 放大並微微浮起 */
+      z-index: 20;                             /* 提升至最上層 */
+      border-color: var(--neon-cyan);
+      box-shadow: 
+        0 0 25px var(--highlight-glow),
+        inset 0 0 15px rgba(0, 243, 255, 0.15);
+    }
 
-        /* 經典迷因文字疊加樣式 */
-        .meme-text {
-            position: absolute;
-            width: 90%;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            font-family: 'Impact', 'Montserrat', sans-serif;
-            font-weight: 900;
-            text-transform: uppercase;
-            word-wrap: break-word;
-            line-height: 1.15;
-            user-select: none;
-            pointer-events: none; /* 防止干擾選取 */
-            transition: color 0.1s;
-        }
+    /* 高亮時右上角出現的動態展覽焦點標籤 */
+    .card.is-highlight::after {
+      content: '⚡ EXHIBIT ACTIVE';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-family: var(--font-code);
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: #000;
+      background: var(--neon-cyan);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      box-shadow: 0 0 10px var(--neon-cyan);
+      animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
 
-        .top-text {
-            top: 5%;
-        }
+    @keyframes badgePop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
 
-        .bottom-text {
-            bottom: 5%;
-        }
+    /* 卡片頭部：名字與時間/編號 */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
 
-        /* 返回關卡入口按鈕 */
-        .back-link {
-            margin-top: 25px;
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-        }
+    .card-author {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-        .back-link:hover {
-            color: #a855f7;
-        }
+    /* 作者名字旁的小頭像圖案 */
+    .author-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0,243,255,0.3), rgba(255,0,127,0.3));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
 
-        /* ==========================================
-           5. 響應式佈局 (RWD for Mobile)
-           ========================================== */
-        @media (max-width: 768px) {
-            .app-container {
-                grid-template-columns: 1fr; /* 手機端改為上下堆疊 */
-            }
+    .card-time {
+      font-family: var(--font-code);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
 
-            .header-title h1 {
-                font-size: 1.8rem;
-            }
+    /* 卡片主要留言內容 */
+    .card-content {
+      font-size: 0.96rem;
+      line-height: 1.65;
+      color: #e2e8f0;
+      word-break: break-word;
+      white-space: pre-wrap; /* 完整保留使用者輸入的換行 */
+    }
 
-            .glass-card {
-                padding: 18px;
-            }
-        }
-    </style>
+    /* 無留言資料時顯示 */
+    #empty-state {
+      display: none;
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-muted);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: var(--card-radius);
+    }
+  </style>
 </head>
 <body>
 
-    <!-- 頂部標題區 -->
-    <header class="header-title">
-        <h1>迷因產生器 MEME GENERATOR</h1>
-        <p>上傳你的圖片，快速打造屬於你的經典迷因爆點！</p>
-    </header>
+  <header>
+    <div class="badge-tag">CYBER EXHIBITION WALL</div>
+    <h1>✨ 朋友對我的動態留言牆 ✨</h1>
+    <p>Live Interactive Message Wall with Auto-Carousel Highlight</p>
+  </header>
 
-    <!-- 主應用程式區域 -->
-    <main class="app-container">
-        
-        <!-- 左側：控制面板 -->
-        <section class="glass-card controls-panel">
-            
-            <!-- 1. 選擇圖片 -->
-            <div class="control-group">
-                <label>選擇底圖 (Image Source)</label>
-                <div class="file-upload-wrapper">
-                    <label for="image-upload" class="file-upload-btn">
-                        📁 選擇電腦中的圖片
-                    </label>
-                    <!-- 使用 <input type="file">，並限制只讀取圖片 -->
-                    <input type="file" id="image-upload" accept="image/*">
-                </div>
-            </div>
+  <main class="app-container">
+    <!-- 1. 展覽動態狀態列 (顯示目前輪播卡片狀態) -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-dot"></div>
+        <span>即時展覽輪播中</span>
+      </div>
+      <div class="status-item" style="font-family: var(--font-code);">
+        FOCUS: <span id="current-index-display" style="color: var(--neon-cyan); font-weight:700;">#00</span> / <span id="total-count-display">00</span>
+      </div>
+    </div>
 
-            <!-- 2. 上方文字輸入 -->
-            <div class="control-group">
-                <label for="top-text-input">上方文字 (Top Text)</label>
-                <input type="text" id="top-text-input" value="當你寫的 Code" placeholder="輸入上方文字...">
-            </div>
+    <!-- 2. 酷炫載入中動畫區塊 -->
+    <div id="loading-screen">
+      <div class="cyber-spinner"></div>
+      <div class="loading-text">讀取留言中...</div>
+    </div>
 
-            <!-- 3. 下方文字輸入 -->
-            <div class="control-group">
-                <label for="bottom-text-input">下方文字 (Bottom Text)</label>
-                <input type="text" id="bottom-text-input" value="一次就編譯成功" placeholder="輸入下方文字...">
-            </div>
+    <!-- 3. 瀑布流留言卡片牆 -->
+    <div id="masonry-wall" class="masonry-wall"></div>
 
-            <!-- 4. 滑桿：字體大小 -->
-            <div class="control-group">
-                <label for="font-size-slider">字體大小 (Font Size) <span class="val-badge" id="size-val">36px</span></label>
-                <input type="range" id="font-size-slider" min="16" max="72" value="36">
-            </div>
+    <!-- 4. 無資料提示區 -->
+    <div id="empty-state">
+      目前試算表中還沒有留言資料喔！
+    </div>
+  </main>
 
-            <!-- 5. 滑桿：上方文字位置 -->
-            <div class="control-group">
-                <label for="top-pos-slider">上方文字位置 (Top Position) <span class="val-badge" id="top-pos-val">5%</span></label>
-                <input type="range" id="top-pos-slider" min="0" max="45" value="5">
-            </div>
+  <script>
+    // ==========================================================================
+    // JS 控制設定區 (資深工程師提示：您可以在這裡輕鬆設定 CSV 網址與輪播秒數)
+    // ==========================================================================
 
-            <!-- 6. 滑桿：下方文字位置 -->
-            <div class="control-group">
-                <label for="bottom-pos-slider">下方文字位置 (Bottom Position) <span class="val-badge" id="bottom-pos-val">5%</span></label>
-                <input type="range" id="bottom-pos-slider" min="0" max="45" value="5">
-            </div>
+    // Google 試算表 CSV 發布網址
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpxuyx-gVUYf4f3d8QN1rb1FWCRoIUY0lkl1hCPSSm6l8_IecsLVjUUiVZ2iYDcgXYZ2jZvp_A2Eh5/pub?output=csv';
 
-            <!-- 7. 顏色與描邊厚度 -->
-            <div class="inline-controls">
-                <div class="control-group">
-                    <label for="text-color">文字顏色</label>
-                    <input type="color" id="text-color" value="#ffffff">
-                </div>
-                <div class="control-group">
-                    <label for="stroke-slider">描邊粗細 <span class="val-badge" id="stroke-val">3px</span></label>
-                    <input type="range" id="stroke-slider" min="0" max="8" value="3">
-                </div>
-            </div>
+    // 【重點修改處】輪播切換時間 (單位：毫秒，3000ms = 3 秒鐘)
+    const CAROUSEL_INTERVAL_MS = 3000;
 
-            <!-- 8. 下載按鈕 -->
-            <button class="download-btn" id="download-btn">
-                ✨ 一鍵下載迷因圖片 (my-meme.png)
-            </button>
-        </section>
+    // 全局變數
+    let messages = [];        // 解析後的留言物件陣列
+    let currentIndex = 0;     // 當前高亮卡片索引
+    let carouselTimer = null; // 輪播計時器
 
-        <!-- 右側：迷因即時預覽區 -->
-        <section class="glass-card preview-panel">
-            <!-- html2canvas 會將此 #meme-preview-container 區域擷取下來成圖片 -->
-            <div class="meme-canvas-box" id="meme-preview-container">
-                <!-- 預設顯示的迷因底圖 (使用 Data URL SVG 確保初始進入不空白且無 CORS 問題) -->
-                <img id="meme-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'><rect width='100%' height='100%' fill='%231e1b4b'/><circle cx='250' cy='220' r='120' fill='%236366f1' opacity='0.5'/><text x='50%' y='48%' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-size='28' font-family='sans-serif'>請上傳您的迷因圖片</text></svg>" alt="迷因底圖">
-                
-                <!-- 上方與下方文字疊加層 -->
-                <div class="meme-text top-text" id="meme-top-text">當你寫的 Code</div>
-                <div class="meme-text bottom-text" id="meme-bottom-text">一次就編譯成功</div>
-            </div>
-        </section>
+    // ==========================================================================
+    // 1. 完整且嚴謹的 CSV 解析器 (正確處理由雙引號包覆、包含逗號或換行的留言)
+    // ==========================================================================
+    function parseCSV(text) {
+      const rows = [];
+      let currentRow = [];
+      let currentCell = '';
+      let insideQuotes = false;
 
-    </main>
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
 
-    <!-- 返回主頁入口連結 -->
-    <a href="../index.html" class="back-link">← 返回任務關卡入口</a>
+        if (char === '"') {
+          // 處理 CSV 雙引號轉義 (例如 "")
+          if (insideQuotes && nextChar === '"') {
+            currentCell += '"';
+            i++; // 跳過下一個轉義引號
+          } else {
+            insideQuotes = !insideQuotes; // 切換引號包覆狀態
+          }
+        } else if (char === ',' && !insideQuotes) {
+          // 在雙引號外的逗號，代表切換下一個欄位
+          currentRow.push(currentCell.trim());
+          currentCell = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+          // 在雙引號外的換行，代表切換下一列
+          if (char === '\r' && nextChar === '\n') {
+            i++; // 處理 Windows 換行符 \r\n
+          }
+          currentRow.push(currentCell.trim());
+          if (currentRow.some(cell => cell !== '')) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentCell = '';
+        } else {
+          currentCell += char;
+        }
+      }
 
-    <!-- ==========================================
-       JavaScript 核心互動邏輯
-       ========================================== -->
-    <script>
-        // 1. 取得 DOM HTML 元素 references
-        const imageUpload = document.getElementById('image-upload');
-        const memeImg = document.getElementById('meme-img');
-        
-        const topTextInput = document.getElementById('top-text-input');
-        const bottomTextInput = document.getElementById('bottom-text-input');
-        const memeTopText = document.getElementById('meme-top-text');
-        const memeBottomText = document.getElementById('meme-bottom-text');
+      // 處理最後一列資料
+      if (currentCell !== '' || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        if (currentRow.some(cell => cell !== '')) {
+          rows.push(currentRow);
+        }
+      }
 
-        const fontSizeSlider = document.getElementById('font-size-slider');
-        const topPosSlider = document.getElementById('top-pos-slider');
-        const bottomPosSlider = document.getElementById('bottom-pos-slider');
-        const strokeSlider = document.getElementById('stroke-slider');
-        const textColorInput = document.getElementById('text-color');
+      if (rows.length === 0) return [];
 
-        const sizeVal = document.getElementById('size-val');
-        const topPosVal = document.getElementById('top-pos-val');
-        const bottomPosVal = document.getElementById('bottom-pos-val');
-        const strokeVal = document.getElementById('stroke-val');
+      // 判斷並移除第一列標題列 (時間戳記, 名字, 說悄悄話)
+      if (rows[0][0] && (rows[0][0].includes('時間') || rows[0][1]?.includes('名字'))) {
+        rows.shift();
+      }
 
-        const downloadBtn = document.getElementById('download-btn');
-        const memeContainer = document.getElementById('meme-preview-container');
+      // 格式化轉換為資料物件
+      return rows.map(r => ({
+        timestamp: r[0] ? r[0] : '',
+        name: r[1] && r[1].trim() !== '' ? r[1].trim() : '秘密朋友',
+        // CSV 欄位: [0]=時間戳記, [1]=名字, [2]=說悄悄話/留言內容
+        message: r[2] && r[2].trim() !== '' ? r[2].trim() : (r[1] ? r[1].trim() : '（這是一位朋友留下的悄悄話）')
+      }));
+    }
 
-        // 2. 本機圖片讀取處理 (使用 FileReader 避開 CORS 問題)
-        imageUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                // 讀取完成後的觸發事件
-                reader.onload = function(event) {
-                    memeImg.src = event.target.result; // 將 base64 圖片碼賦予給 img 標籤
-                };
-                reader.readAsDataURL(file); // 開始讀取本機檔案
-            }
-        });
+    // ==========================================================================
+    // 2. 使用 fetch API 讀取 Google 試算表 CSV
+    // ==========================================================================
+    async function loadMessageData() {
+      const loadingScreen = document.getElementById('loading-screen');
+      const masonryWall = document.getElementById('masonry-wall');
+      const emptyState = document.getElementById('empty-state');
+      const totalCountDisplay = document.getElementById('total-count-display');
 
-        // 3. 即時更新文字內容 (Input 事件)
-        topTextInput.addEventListener('input', () => {
-            memeTopText.textContent = topTextInput.value;
-        });
+      try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
 
-        bottomTextInput.addEventListener('input', () => {
-            memeBottomText.textContent = bottomTextInput.value;
-        });
+        const csvRawText = await response.text();
+        messages = parseCSV(csvRawText);
 
-        // 4. 更新文字樣式與位置 (滑桿與顏色)
-        function updateStyles() {
-            const fontSize = fontSizeSlider.value;
-            const topPos = topPosSlider.value;
-            const bottomPos = bottomPosSlider.value;
-            const strokeWidth = strokeSlider.value;
-            const color = textColorInput.value;
+        // 隱藏讀取動畫
+        loadingScreen.style.display = 'none';
 
-            // 更新數值顯示標籤
-            sizeVal.textContent = `${fontSize}px`;
-            topPosVal.textContent = `${topPos}%`;
-            bottomPosVal.textContent = `${bottomPos}%`;
-            strokeVal.textContent = `${strokeWidth}px`;
-
-            // 套用至上方與下方文字
-            [memeTopText, memeBottomText].forEach(el => {
-                el.style.fontSize = `${fontSize}px`;
-                el.style.color = color;
-                
-                // 動態產生黑色描邊文字效果 (text-shadow)
-                if (parseInt(strokeWidth) === 0) {
-                    el.style.textShadow = 'none';
-                } else {
-                    const sw = strokeWidth;
-                    el.style.textShadow = `
-                        -${sw}px -${sw}px 0 #000,
-                         ${sw}px -${sw}px 0 #000,
-                        -${sw}px  ${sw}px 0 #000,
-                         ${sw}px  ${sw}px 0 #000,
-                         0px ${sw}px 0 #000,
-                         0px -${sw}px 0 #000,
-                         ${sw}px 0px 0 #000,
-                        -${sw}px 0px 0 #000,
-                         2px 2px 8px rgba(0,0,0,0.8)
-                    `;
-                }
-            });
-
-            // 調整垂直位置
-            memeTopText.style.top = `${topPos}%`;
-            memeBottomText.style.bottom = `${bottomPos}%`;
+        if (messages.length === 0) {
+          emptyState.style.display = 'block';
+          return;
         }
 
-        // 為所有控制項綁定 input 事件監聽
-        fontSizeSlider.addEventListener('input', updateStyles);
-        topPosSlider.addEventListener('input', updateStyles);
-        bottomPosSlider.addEventListener('input', updateStyles);
-        strokeSlider.addEventListener('input', updateStyles);
-        textColorInput.addEventListener('input', updateStyles);
+        // 更新總卡片數
+        totalCountDisplay.textContent = String(messages.length).padStart(2, '0');
 
-        // 初始化套用一次樣式
-        updateStyles();
+        // 動態生成 DOM 卡片牆
+        renderMasonryCards(messages);
+        masonryWall.style.display = 'block';
 
-        // 5. 一鍵下載圖片邏輯 (使用 html2canvas)
-        downloadBtn.addEventListener('click', function() {
-            // 變更按鈕狀態
-            downloadBtn.textContent = '⏳ 圖片生成中...';
-            downloadBtn.style.opacity = '0.7';
+        // 啟動 3 秒輪播焦點特效
+        startCarousel();
 
-            // 使用 html2canvas 將 DOM 節點繪製為 Canvas
-            html2canvas(memeContainer, {
-                useCORS: true,      // 允許跨域圖片（若有）
-                scale: 2            // 高清導出 (2倍解析度)
-            }).then(canvas => {
-                // 將 Canvas 轉換為圖片連結 Data URL
-                const imageUrl = canvas.toDataURL('image/png');
+      } catch (error) {
+        console.error('讀取 CSV 留言資料失敗:', error);
+        loadingScreen.querySelector('.loading-text').textContent = '資料載入失敗，請確認網路或試算表網址！';
+      }
+    }
 
-                // 建立一個隱藏的 <a> 觸發下載行為
-                const link = document.createElement('a');
-                link.download = 'my-meme.png';
-                link.href = imageUrl;
-                link.click();
+    // ==========================================================================
+    // 3. 動態渲染留言卡片至瀑布流牆 (Masonry Wall)
+    // ==========================================================================
+    function renderMasonryCards(dataList) {
+      const wallContainer = document.getElementById('masonry-wall');
+      wallContainer.innerHTML = '';
 
-                // 復原按鈕文字
-                downloadBtn.textContent = '✨ 一鍵下載迷因圖片 (my-meme.png)';
-                downloadBtn.style.opacity = '1';
-            }).catch(err => {
-                console.error('導出失敗：', err);
-                alert('導出圖片時發生錯誤，請稍後再試。');
-                downloadBtn.textContent = '✨ 一鍵下載迷因圖片 (my-meme.png)';
-                downloadBtn.style.opacity = '1';
-            });
-        });
-    </script>
-</body>
-</html>
+      dataList.forEach((item, idx) => {
+        const card = document.createElement('div');
+        // 預設加上 is-dimmed (暗化狀態)，由輪播控制器賦予 is-highlight
+        card.className = 'card is-dimmed';
+        card.dataset.index = idx;
+
+        // 整理時間顯示 (例如：僅保留日期)
+        const dateString = item.timestamp ? item.timestamp.split(' ')[0] : 'JUST NOW';
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-author">
+              <div class="author-avatar">💬</div>
+              <span>${escapeHTML(item.name)}</span>
+            </div>
+            <span class="card-time">${escapeHTML(date
