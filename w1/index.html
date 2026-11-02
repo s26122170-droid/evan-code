@@ -1,36 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="./style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pen</title>
-  </head>
-  <body>
-
-    <script src="./script.js"></script>
-  </body>
-</html>
-<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>個人數位名片</title>
-  <!-- 引入 CSS 樣式檔案 -->
-  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 基礎設定與字體重置 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      /* 馬卡龍柔和漸層背景 */
+      background: linear-gradient(135deg, #ffe5ec 0%, #e8e8ff 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* 卡片主體：置中、圓角與微陰影 */
+    .card-container {
+      background-color: #ffffff;
+      padding: 40px 30px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      /* 柔和粉紫微陰影 */
+      box-shadow: 0 12px 30px rgba(183, 156, 215, 0.25);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* 懸停卡片時微微上浮 */
+    .card-container:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(183, 156, 215, 0.35);
+    }
+
+    /* 1. 圓形大頭貼 */
+    .profile-img {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 18px;
+      border: 4px solid #fff5f8;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    /* 2. 姓名與自我介紹 */
+    .profile-name {
+      font-size: 1.5rem;
+      color: #4a4a4a;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .profile-bio {
+      font-size: 0.95rem;
+      color: #7a7a7a;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    /* 3. 按鈕排列與樣式 */
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      display: block;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.25s ease;
+    }
+
+    /* Instagram 按鈕：馬卡龍蜜桃粉 */
+    .btn-instagram {
+      background-color: #ffb7b2;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 183, 178, 0.4);
+    }
+
+    .btn-instagram:hover {
+      background-color: #ff9e99;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 183, 178, 0.6);
+    }
+
+    /* Email 按鈕：馬卡龍粉藍 */
+    .btn-email {
+      background-color: #c7ceea;
+      color: #4a4a4a;
+      box-shadow: 0 4px 12px rgba(199, 206, 234, 0.4);
+    }
+
+    .btn-email:hover {
+      background-color: #b5bef0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(199, 206, 234, 0.6);
+    }
+  </style>
 </head>
 <body>
 
   <div class="card-container">
-    <!-- 1. 圓形大頭貼照片（可替換 src 裡面的圖片連結） -->
+    <!-- 圓形大頭貼照片（可替換 src 裡的圖片網址） -->
     <img src="https://i.postimg.cc/WpmBgqBS/avatar-em-be-ma-phinh.jpg" class="profile-img">
 
-    <!-- 2. 姓名與簡短自我介紹 -->
+    <!-- 姓名與簡短自我介紹 -->
     <h1 class="profile-name">李瓊英</h1>
     <p class="profile-bio">✨ 熱愛生活的 UI/UX 設計新手｜記錄設計與日常的美好小事</p>
 
-    <!-- 3. 按鈕連結 -->
+    <!-- 按鈕連結（可修改 href 裡面的網址或信箱） -->
     <div class="button-group">
       <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" class="btn btn-instagram">Instagram</a>
       <a href="mailto:your-email@example.com" class="btn btn-email">Email 聯絡我</a>
